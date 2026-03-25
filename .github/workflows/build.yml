@@ -22,14 +22,16 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
       
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-      
-    - name: Build APK
-      run: ./gradlew assembleDebug
+    - name: Download and extract project
+      run: |
+        wget https://github.com/x-looka19/Looka-mod/raw/main/LookaEngineApp.zip
+        unzip LookaEngineApp.zip
+        cd LookaEngineApp
+        chmod +x gradlew
+        ./gradlew assembleDebug
       
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: LookaEngine
-        path: app/build/outputs/apk/debug/*.apk
+        path: LookaEngineApp/app/build/outputs/apk/debug/*.apk
