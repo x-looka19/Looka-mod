@@ -22,12 +22,9 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v4
       
-    - name: List files
-      run: ls -la
-      
-    - name: Create basic Android project
+    - name: Create Android project
       run: |
-        mkdir -p app/src/main/java/com/example/app
+        mkdir -p app/src/main/java/com/looka/engine
         mkdir -p app/src/main/res/values
         
         cat > app/build.gradle << 'EOF'
@@ -36,9 +33,9 @@ jobs:
         }
         android {
             compileSdk 34
-            namespace 'com.example.app'
+            namespace 'com.looka.engine'
             defaultConfig {
-                applicationId "com.example.app"
+                applicationId "com.looka.engine"
                 minSdk 21
                 targetSdk 34
                 versionCode 1
@@ -51,24 +48,39 @@ jobs:
         EOF
         
         cat > settings.gradle << 'EOF'
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
         include ':app'
         EOF
         
         cat > build.gradle << 'EOF'
-        buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+        plugins {
+            id 'com.android.application' version '8.1.0' apply false
         }
-        allprojects {
-            repositories { google(); mavenCentral() }
-        }
+        EOF
+        
+        cat > gradle.properties << 'EOF'
+        org.gradle.jvmargs=-Xmx2048m
+        android.useAndroidX=true
         EOF
         
         cat > app/src/main/AndroidManifest.xml << 'EOF'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.example.app">
-            <application android:label="Test App">
+            package="com.looka.engine">
+            <application android:label="Looka Engine">
                 <activity android:name=".MainActivity" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
@@ -79,8 +91,8 @@ jobs:
         </manifest>
         EOF
         
-        cat > app/src/main/java/com/example/app/MainActivity.java << 'EOF'
-        package com.example.app;
+        cat > app/src/main/java/com/looka/engine/MainActivity.java << 'EOF'
+        package com.looka.engine;
         import android.app.Activity;
         import android.os.Bundle;
         public class MainActivity extends Activity {
@@ -92,13 +104,15 @@ jobs:
         }
         EOF
         
-        chmod +x gradlew 2>/dev/null || true
+        cat > local.properties << 'EOF'
+        sdk.dir=$ANDROID_HOME
+        EOF
         
     - name: Build APK
       run: |
         chmod +x gradlew 2>/dev/null || true
-        ./gradlew assembleDebug --stacktrace || gradle assembleDebug
-      
+        ./gradlew assembleDebug
+        
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
